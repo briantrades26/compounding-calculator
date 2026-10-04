@@ -88,7 +88,7 @@ $('share').onclick=async()=>{const q=new URLSearchParams();['p','wf','wa','ws'].
  let text='Principal investment: $'+$('p').value+'\n';
  if(+$('wf').value>0&&num($('wa').value)>0)text+='Schedule: $'+$('wa').value+' every '+$('wf').value+' trading days, scheduled from '+fd($('ws').value||$('d').value)+', running '+SDAYS+' trading days.\n';
  const bd=(k,n)=>{const[y,m,d]=k.split('-').map(Number);const t=new Date(y,m-1,d);while(n>0){t.setDate(t.getDate()+1);if(t.getDay()%6)n--}return (t.getMonth()+1)+'/'+t.getDate()};
- text+=PAY.length?'First withdrawal: '+fd(PAY[0][0])+'\nWithdrawals (date I withdraw, est. arrival 3-5 business days later):\n'+PAY.map(x=>fd(x[0])+'  $'+Math.round(x[1]).toLocaleString()+'  (arrives ~'+bd(x[0],3)+'-'+bd(x[0],5)+')').join('\n')+'\n':'No withdrawals.\n';
+ text+=PAY.length?'First withdrawal: '+fd(PAY[0][0])+'\nPlease expect payment within 3 to 5 business days of the withdrawal dates below.\nWithdrawals:\n'+PAY.map(x=>fd(x[0])+'  $'+Math.round(x[1]).toLocaleString()).join('\n')+'\n':'No withdrawals.\n';
  text+=$('wsum').innerText;
  try{if(navigator.share){await navigator.share({title:'Withdrawal schedule',text,url});return}}catch(e){if(e.name==='AbortError')return}
  try{await navigator.clipboard.writeText(text+'\n'+url);alert('Copied to clipboard')}catch(_){prompt('Copy this link',url)}};
