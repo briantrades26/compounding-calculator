@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Compounder">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>Compounding Calculator</title>
+<style>
+:root{color-scheme:light dark;--bg:#f2f2f7;--card:#fff;--txt:#111;--sub:#6b6b70;--pos:#1f9d55}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--txt:#f2f2f7;--sub:#9a9aa0}}
+*{box-sizing:border-box}body{margin:0;font:16px -apple-system,system-ui,sans-serif;background:var(--bg);color:var(--txt);padding:env(safe-area-inset-top) 10px 40px}
+h1{font-size:24px;margin:16px 4px 8px}
+.card{background:var(--card);border-radius:14px;padding:14px;margin:10px 0}
+label{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px}
+input{width:100%;font-size:17px;padding:11px;border-radius:10px;border:1px solid #8884;background:transparent;color:var(--txt)}
+.big{font-size:28px;font-weight:700}.sub{color:var(--sub);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+th,td{text-align:right;padding:6px 2px;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #8883;white-space:nowrap}
+th{font-size:11px;color:var(--sub);position:sticky;top:0;background:var(--card)}
+th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.pos{color:var(--pos)}
+.wrap{overflow-x:auto}
+</style></head><body>
+<h1>Compounding Calculator</h1>
+<div class="card">
+<label>Principal ($)</label><input id="p" type="number" inputmode="decimal" value="10000">
+<label>Daily Profit Rate (%)</label><input id="r" type="number" inputmode="decimal" value="2">
+<label>Length of Term (trading days, weekends excluded)</label><input id="n" type="number" inputmode="numeric" value="20">
+<label>Start Date</label><input id="d" type="date">
+</div>
+<div class="card">
+<div class="sub">Ending Balance</div><div class="big" id="end">$0</div>
+<div class="sub" id="summary"></div>
+</div>
+<div class="card wrap"><table>
+<thead><tr><th style="width:9%">Day</th><th style="width:15%">Date</th><th style="width:26%">Beg Bal</th><th style="width:22%">Profit</th><th style="width:28%">End Bal</th></tr></thead>
+<tbody id="tbl"></tbody></table></div>
+<script>
+const $=id=>document.getElementById(id);
+const money=v=>'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});const m0=v=>'$'+Math.round(v).toLocaleString();
+const ids=['p','r','n','d'];
+const today=new Date();$('d').value=today.toISOString().slice(0,10);
+ids.forEach(i=>{const s=localStorage.getItem('cc2_'+i);if(s)$(i).value=s;$(i).addEventListener('input',calc)});
+function calc(){
+ ids.forEach(i=>localStorage.setItem('cc2_'+i,$(i).value));
+ const P=+$('p').value||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
+ const [y,m,dd]=($('d').value||today.toISOString().slice(0,10)).split('-').map(Number);
+ let dt=new Date(y,m-1,dd),b=P,rows='';
+ for(let k=1;k<=n;k++){
+  while(dt.getDay()==0||dt.getDay()==6)dt.setDate(dt.getDate()+1);
+  const beg=b,pr=beg*r;b=beg+pr;
+  rows+=`<tr><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td>${m0(beg)}</td><td class="pos">${m0(pr)}</td><td>${m0(b)}</td></tr>`;
+  dt.setDate(dt.getDate()+1);
+ }
+ $('end').textContent=money(b);
+ $('summary').textContent=`Total profit ${money(b-P)} over ${n} trading days`;
+ $('tbl').innerHTML=rows;
+}
+calc();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script></body></html>
