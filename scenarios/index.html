@@ -86,7 +86,7 @@ $('share').onclick=async()=>{const q=new URLSearchParams();['p','wf','wa','ws'].
  const fd=s=>{if(!s)return'';const[y,m,d]=s.split('-');return +m+'/'+ +d+'/'+y};
  const ex=Object.keys(man).sort().map(k=>fd(k)+' $'+Math.round(man[k]).toLocaleString()).join(', ');
  let text='Principal investment: $'+$('p').value+'\n';
- if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule: $'+$('wa').value+' every '+$('wf').value+' trading days, running '+SDAYS+' trading days.\nStarting date: '+fd($('ws').value||$('d').value)+'\n';
+ if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule: $'+$('wa').value+'\nFrequency: every '+$('wf').value+' trading days\nStarting date: '+fd($('ws').value||$('d').value)+'\n';
  const bd=(k,n)=>{const[y,m,d]=k.split('-').map(Number);const t=new Date(y,m-1,d);while(n>0){t.setDate(t.getDate()+1);if(t.getDay()%6)n--}return (t.getMonth()+1)+'/'+t.getDate()};
  text+=PAY.length?'Please expect payment within 3 to 5 business days of the withdrawal dates:\n'+PAY.map(x=>fd(x[0])+'  $'+Math.round(x[1]).toLocaleString()).join('\n')+'\n':'No withdrawals.\n';
  text+=$('wsum').innerText;
