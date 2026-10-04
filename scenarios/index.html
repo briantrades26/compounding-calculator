@@ -23,6 +23,9 @@ th,td{text-align:right;padding:6px 2px;overflow:hidden;text-overflow:ellipsis;bo
 th{font-size:11px;color:var(--sub);position:sticky;top:0;background:var(--card)}
 th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.wd{width:100%;font-size:12px;padding:4px 2px;text-align:right;border-radius:6px;color:#d9534f}.wd.man{background:#ffcc0033;font-weight:600}.pos{color:var(--pos)}
 .wrap{overflow-x:auto}
+#sbar{position:-webkit-sticky;position:sticky;top:0;z-index:20;background:var(--bg);margin:0 -10px;padding:8px 14px 0;font-size:15px;line-height:1.35}
+#sbar .ln{display:flex;justify-content:space-between;gap:8px;white-space:nowrap}#sbar .ln span:first-child{overflow:hidden;text-overflow:ellipsis;color:var(--sub)}#sbar .ln b{font-variant-numeric:tabular-nums}
+#sbar hr{border:0;border-top:1px solid #8886;margin:7px 0 0}
 input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-and-time-value{text-align:left}</style></head><body>
 <h1>Compounding Scenarios</h1>
 <div class="card">
@@ -45,6 +48,7 @@ input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-
 <div class="sub">Ending Balance</div><div class="big" id="end">$0</div>
 <div class="sub" id="summary"></div><div class="sub" id="wsum"></div>
 <button id="share" style="width:100%;margin-top:12px;font-size:17px;font-weight:600;padding:12px;border-radius:12px;border:0;background:#1f9d55;color:#fff">Share Withdrawals</button></div>
+<div id="sbar"><div class="ln"><span id="sb1l">Client's Payout:</span><b id="sb1">$0</b></div><div class="ln"><span>My Balance:</span><b id="sb2">$0</b></div><div class="ln"><span>My Profit:</span><b id="sb3">$0 (0%)</b></div><hr></div>
 <div class="card wrap"><table>
 <thead><tr><th style="width:8%">Day</th><th style="width:13%">Date</th><th style="width:21%">Beg Bal</th><th style="width:17%">Profit</th><th style="width:20%">Withdraw</th><th style="width:21%">End Bal</th></tr></thead>
 <tbody id="tbl"></tbody></table></div>
@@ -83,17 +87,18 @@ function calc(){
  const P=+$('p').value.replace(/,/g,'')||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
  const [y,m,dd]=($('d').value||iso(today)).split('-').map(Number);
  const wl=parseInt($('wl').value)||0,wf=parseInt($('wf').value)||0,wa=num($('wa').value),ws=$('ws').value||$('d').value||iso(today);
- PAY=[];SDAYS=0;LASTD=null;FIRSTD=null;let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,tsw=0,tp=0,cnt=-1,carry=0;
+ PAY=[];SDAYS=0;LASTD=null;FIRSTD=null;let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,tsw=0,tp=0,cnt=-1,carry=0,lwb=null;
  for(let k=1;k<=n;k++){
   while(dt.getDay()==0||dt.getDay()==6||isHol(dt)){if(isHol(dt)&&dt.getDay()%6)rows+=`<tr style="opacity:.45"><td></td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td colspan="2" style="text-align:left">Market holiday</td><td><input class="wd" disabled placeholder="—"></td><td>${m0(b)}</td></tr>`;dt.setDate(dt.getDate()+1);}
   const key=iso(dt),beg=b,pr=beg*r;tp+=pr;
   let w=carry,moved=carry>0;carry=0;const inS=wf>0&&wa>0&&key>=ws&&(!wl||cnt+1<wl);if(inS){cnt++;if(cnt%wf===0)w+=wa}
   const bh=isBankHol(dt);if(bh&&w>0){carry=w;w=0}
-  const ex=man[key]||0;w=Math.min(w,beg+pr);tsw+=w;const e2=Math.min(ex,beg+pr-w);tw+=w+e2;b=beg+pr-w-e2;if(inS)SDAYS++;if(w+e2>0)PAY.push([key,w+e2]);
+  const ex=man[key]||0;w=Math.min(w,beg+pr);tsw+=w;const e2=Math.min(ex,beg+pr-w);tw+=w+e2;b=beg+pr-w-e2;if(inS)SDAYS++;if(w+e2>0){PAY.push([key,w+e2]);lwb=b}
   rows+=`<tr><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td>${m0(beg)}</td><td class="pos">${m0(pr)}</td><td>${bh?'<div style="font-size:10px;opacity:.6">Bank holiday</div>':''}${w?`<div style="color:#d9534f">${m0(w)}${moved?' (moved)':''}</div>`:''}<input class="wd${ex?' man':''}" ${bh?'disabled':''} data-k="${key}" inputmode="decimal" value="${ex?Math.round(ex).toLocaleString():''}" placeholder="${w?'+ extra':'+'}"></td><td>${m0(b)}</td></tr>`;
   if(!FIRSTD)FIRSTD=new Date(dt);LASTD=new Date(dt);dt.setDate(dt.getDate()+1);
  }
- G={P,n,tw,tsw,b,tp};$('end').textContent=money(b);
+ G={P,n,tw,tsw,b,tp,lwb:lwb===null?b:lwb};$('end').textContent=money(b);
+ const nm=$('pf').value.trim(),myb=G.lwb,mp=myb-P;$('sb1l').textContent=(nm?nm+"'s":"Client's")+' Payout:';$('sb1').textContent=m0(tw);$('sb2').textContent=m0(myb);$('sb3').textContent=(mp<0?'-':'')+m0(Math.abs(mp))+(P>0?' ('+Math.round(mp/P*100).toLocaleString()+'%)':'');
  $('summary').innerHTML=`Total profit ${money(tp)} over ${n} trading days<br>(${(n/5).toFixed(1)} weeks, ${(n/21).toFixed(1)} months)`;
  $('wsum').innerHTML=`Total withdrawn ${money(tw)} (scheduled ${money(tsw)}, extra ${money(tw-tsw)})<br>Withdrawn + ending balance ${money(tw+b)}`;
  $('tbl').innerHTML=rows;
@@ -109,11 +114,11 @@ $('share').onclick=async()=>{const q=new URLSearchParams();['pf','p','wf','wa','
  text+=PAY.length?'Starting date: '+fd(PAY[0][0])+'\nEnding Date: '+fd(PAY[PAY.length-1][0])+'\n\n':'';
  text+='Please expect payment within 3 to 5 business days of each withdrawal date.\n\n';
  text+='Balance to be Paid:\n'+money(BAL)+'\n\nProfit:\n'+money(BAL-PRN)+(PRN>0?'\n('+((BAL-PRN)/PRN*100).toFixed(1)+'%)':'');
- if(PRN>0&&PAY.length){const toD=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};const days=Math.round((toD(PAY[PAY.length-1][0])-FIRSTD)/864e5)+1;const ann=(BAL-PRN)/PRN*365/days*100;text+='\n\nEquivalent to about '+Math.round(ann).toLocaleString()+'% per year (simple, not compounded)';}
+ if(PRN>0&&PAY.length){const toD=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};const days=Math.round((toD(PAY[PAY.length-1][0])-FIRSTD)/864e5)+1;const ann=(BAL-PRN)/PRN*365/days*100;text+='\n\nAPY Equivalent: '+Math.round(ann).toLocaleString()+'%';}
  text+='\n\nDisclosures: This is a hypothetical projection for illustration only and is not an offer, guarantee, or promise of any return or payment. Trading futures involves substantial risk of loss, including loss of principal, and past or modeled performance does not guarantee future results. Actual results, withdrawal amounts, and timing may differ materially. This is not investment, tax, or legal advice.';
  try{if(navigator.share){await navigator.share({text});return}}catch(e){if(e.name==='AbortError')return}
  try{await navigator.clipboard.writeText(text);alert('Copied to clipboard')}catch(_){prompt('Copy this link',url)}};
 applyURL();['p','wa'].forEach(id=>fmtP($(id)));
 calc();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v5</div></body></html>
+</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v6</div></body></html>
