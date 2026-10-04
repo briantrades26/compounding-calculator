@@ -29,15 +29,15 @@ input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-
 <label>Principal ($)</label><input id="p" type="text" inputmode="decimal" autocomplete="off" value="10,000">
 <label>Daily Profit Rate (%)</label><input id="r" type="number" inputmode="decimal" value="2">
 <label>Length of Term (trading days, weekends excluded)</label><input id="n" type="number" inputmode="numeric" value="20">
-<label>Start Date</label><input id="d" type="date">
+<label>Compounding Start Date</label><input id="d" type="date">
 </div>
 <div class="card">
 <div class="sub" style="font-weight:600;color:var(--txt)">Withdrawal Schedule (optional)</div>
 <label>Prepared For</label><input id="pf" type="text" autocomplete="off" placeholder="Name">
 <label>Every how many trading days</label><input id="wf" type="number" inputmode="numeric" placeholder="e.g. 5">
-<label>For how many trading days (blank = until end of term)</label><input id="wl" type="number" inputmode="numeric" placeholder="e.g. 60">
+<label>Pay out for how many trading days from First Payout Date (blank = until end of term)</label><input id="wl" type="number" inputmode="numeric" placeholder="e.g. 60">
 <label>Amount ($)</label><input id="wa" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 2,500">
-<label>Starting Date</label><input id="ws" type="date">
+<label>First Payout Date (can be later, to let it compound first)</label><input id="ws" type="date">
 <div class="sub" style="margin-top:8px">Scheduled withdrawals show in the Withdraw column automatically. Tap the box in any row to type an extra withdrawal; it adds on top of the schedule.</div>
 <button id="clr" style="margin-top:10px;font-size:15px;padding:9px 12px;border-radius:10px;border:1px solid #8884;background:transparent;color:var(--txt)">Clear extra withdrawals</button>
 </div>
