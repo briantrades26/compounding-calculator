@@ -49,7 +49,7 @@ th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.wd{width:100%;font-size:1
 <script>
 const $=id=>document.getElementById(id);
 const money=v=>'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});const m0=v=>'$'+Math.round(v).toLocaleString();
-const ids=['p','r','n','d','wf','wa','ws'];let man=JSON.parse(localStorage.getItem('cs1_extra')||'{}');const num=v=>+String(v).replace(/[^\d.]/g,'')||0;const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+let PAY=[],SDAYS=0;const ids=['p','r','n','d','wf','wa','ws'];let man=JSON.parse(localStorage.getItem('cs1_extra')||'{}');const num=v=>+String(v).replace(/[^\d.]/g,'')||0;const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=new Date();$('d').value=iso(today);
 ids.forEach(i=>{const s=localStorage.getItem('cs1_'+i);if(s)$(i).value=s;if(i!=='p'&&i!=='wa'){$(i).addEventListener('input',calc);$(i).addEventListener('change',calc)}});
 function fmtP(el){el=el&&el.nodeType?el:$('p');const v=el.value,pos=el.selectionStart??v.length;
@@ -66,12 +66,12 @@ function calc(){
  const P=+$('p').value.replace(/,/g,'')||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
  const [y,m,dd]=($('d').value||iso(today)).split('-').map(Number);
  const wf=parseInt($('wf').value)||0,wa=num($('wa').value),ws=$('ws').value||$('d').value||iso(today);
- let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,tsw=0,tp=0,cnt=-1;
+ PAY=[];SDAYS=0;let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,tsw=0,tp=0,cnt=-1;
  for(let k=1;k<=n;k++){
   while(dt.getDay()==0||dt.getDay()==6)dt.setDate(dt.getDate()+1);
   const key=iso(dt),beg=b,pr=beg*r;tp+=pr;
   let w=0;if(wf>0&&wa>0&&key>=ws){cnt++;if(cnt%wf===0)w=wa}
-  const ex=man[key]||0;w=Math.min(w,beg+pr);tsw+=w;const e2=Math.min(ex,beg+pr-w);tw+=w+e2;b=beg+pr-w-e2;
+  const ex=man[key]||0;w=Math.min(w,beg+pr);tsw+=w;const e2=Math.min(ex,beg+pr-w);tw+=w+e2;b=beg+pr-w-e2;if(wf>0&&wa>0&&key>=ws)SDAYS++;if(w+e2>0)PAY.push([key,w+e2]);
   rows+=`<tr><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td>${m0(beg)}</td><td class="pos">${m0(pr)}</td><td>${w?`<div style="color:#d9534f">${m0(w)}</div>`:''}<input class="wd${ex?' man':''}" data-k="${key}" inputmode="decimal" value="${ex?Math.round(ex).toLocaleString():''}" placeholder="${w?'+ extra':'+'}"></td><td>${m0(b)}</td></tr>`;
   dt.setDate(dt.getDate()+1);
  }
@@ -85,13 +85,13 @@ $('share').onclick=async()=>{const q=new URLSearchParams();['wf','wa','ws'].forE
  const url=location.origin+location.pathname+'?'+q.toString();
  const fd=s=>{if(!s)return'';const[y,m,d]=s.split('-');return +m+'/'+ +d+'/'+y};
  const ex=Object.keys(man).sort().map(k=>fd(k)+' $'+Math.round(man[k]).toLocaleString()).join(', ');
- let text='Withdrawals: ';
- if(+$('wf').value>0&&num($('wa').value)>0)text+='$'+$('wa').value+' every '+$('wf').value+' trading days starting '+fd($('ws').value||$('d').value)+'. ';else text+='no schedule set. ';
- if(ex)text+='Extra: '+ex+'. ';
- text+=$('wsum').innerText.replace(/\n/g,'. ')+'.';
+ let text='';
+ if(+$('wf').value>0&&num($('wa').value)>0)text+='Schedule: $'+$('wa').value+' every '+$('wf').value+' trading days, starting '+fd($('ws').value||$('d').value)+', running '+SDAYS+' trading days.\n';
+ text+=PAY.length?'First payout: '+fd(PAY[0][0])+'\nPayouts:\n'+PAY.map(x=>fd(x[0])+'  $'+Math.round(x[1]).toLocaleString()).join('\n')+'\n':'No payouts.\n';
+ text+=$('wsum').innerText;
  try{if(navigator.share){await navigator.share({title:'Withdrawal schedule',text,url});return}}catch(e){if(e.name==='AbortError')return}
  try{await navigator.clipboard.writeText(text+'\n'+url);alert('Copied to clipboard')}catch(_){prompt('Copy this link',url)}};
 applyURL();['p','wa'].forEach(id=>fmtP($(id)));
 calc();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v3</div></body></html>
+</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v4</div></body></html>
