@@ -63,6 +63,16 @@ function fmtP(el){el=el&&el.nodeType?el:$('p');const v=el.value,pos=el.selection
 ['p','wa'].forEach(id=>{['input','keyup','change'].forEach(ev=>$(id).addEventListener(ev,()=>{fmtP($(id));calc()}));fmtP($(id))});
 $('clr').onclick=()=>{man={};localStorage.setItem('cs1_extra','{}');calc()};
 $('tbl').addEventListener('change',e=>{const t=e.target;if(!t.classList.contains('wd'))return;const k=t.dataset.k;if(num(t.value)<=0)delete man[k];else man[k]=num(t.value);localStorage.setItem('cs1_extra',JSON.stringify(man));calc()});
+
+const _hc={};function isHol(dt){const y=dt.getFullYear();if(!_hc[y]){const H=new Set(),f=d=>H.add(iso(d));
+ const obs=(m,d)=>{const t=new Date(y,m,d);if(t.getDay()==6)t.setDate(t.getDate()-1);else if(t.getDay()==0)t.setDate(t.getDate()+1);return t};
+ const nth=(m,wd,n)=>{const t=new Date(y,m,1);while(t.getDay()!=wd)t.setDate(t.getDate()+1);t.setDate(t.getDate()+7*(n-1));return t};
+ const last=(m,wd)=>{const t=new Date(y,m+1,0);while(t.getDay()!=wd)t.setDate(t.getDate()-1);return t};
+ const ny=new Date(y,0,1);if(ny.getDay()!=6)f(obs(0,1));
+ f(nth(0,1,3));f(nth(1,1,3));
+ const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,g=Math.floor((8*b+13)/25),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+19*l)/433),mo=Math.floor((h+l-7*m+90)/25),da=(h+l-7*m+33*mo+19)%32;
+ f(new Date(y,mo-1,da-2));f(last(4,1));f(obs(5,19));f(obs(6,4));f(nth(8,1,1));f(nth(10,4,4));f(obs(11,25));_hc[y]=H}
+ return _hc[y].has(iso(dt))}
 function calc(){
  ids.forEach(i=>localStorage.setItem('cs1_'+i,$(i).value));
  const P=+$('p').value.replace(/,/g,'')||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
@@ -70,7 +80,7 @@ function calc(){
  const wl=parseInt($('wl').value)||0,wf=parseInt($('wf').value)||0,wa=num($('wa').value),ws=$('ws').value||$('d').value||iso(today);
  PAY=[];SDAYS=0;LASTD=null;FIRSTD=null;let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,tsw=0,tp=0,cnt=-1;
  for(let k=1;k<=n;k++){
-  while(dt.getDay()==0||dt.getDay()==6)dt.setDate(dt.getDate()+1);
+  while(dt.getDay()==0||dt.getDay()==6||isHol(dt)){if(isHol(dt)&&dt.getDay()%6)rows+=`<tr style="opacity:.45"><td></td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td colspan="2" style="text-align:left">Market holiday</td><td><input class="wd" disabled placeholder="—"></td><td>${m0(b)}</td></tr>`;dt.setDate(dt.getDate()+1);}
   const key=iso(dt),beg=b,pr=beg*r;tp+=pr;
   let w=0;const inS=wf>0&&wa>0&&key>=ws&&(!wl||cnt+1<wl);if(inS){cnt++;if(cnt%wf===0)w=wa}
   const ex=man[key]||0;w=Math.min(w,beg+pr);tsw+=w;const e2=Math.min(ex,beg+pr-w);tw+=w+e2;b=beg+pr-w-e2;if(inS)SDAYS++;if(w+e2>0)PAY.push([key,w+e2]);
