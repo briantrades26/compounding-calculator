@@ -50,7 +50,7 @@ input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-
 <script>
 const $=id=>document.getElementById(id);
 const money=v=>'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});const m0=v=>'$'+Math.round(v).toLocaleString();
-let PAY=[],SDAYS=0,LASTD=null;const ids=['p','r','n','d','wf','wa','ws','pf'];let man=JSON.parse(localStorage.getItem('cs1_extra')||'{}');const num=v=>+String(v).replace(/[^\d.]/g,'')||0;const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+let PAY=[],SDAYS=0,LASTD=null,FIRSTD=null,G={};const ids=['p','r','n','d','wf','wa','ws','pf'];let man=JSON.parse(localStorage.getItem('cs1_extra')||'{}');const num=v=>+String(v).replace(/[^\d.]/g,'')||0;const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=new Date();$('d').value=iso(today);
 ids.forEach(i=>{const s=localStorage.getItem('cs1_'+i);if(s)$(i).value=s;if(i!=='p'&&i!=='wa'){$(i).addEventListener('input',calc);$(i).addEventListener('change',calc)}});
 function fmtP(el){el=el&&el.nodeType?el:$('p');const v=el.value,pos=el.selectionStart??v.length;
@@ -67,32 +67,32 @@ function calc(){
  const P=+$('p').value.replace(/,/g,'')||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
  const [y,m,dd]=($('d').value||iso(today)).split('-').map(Number);
  const wf=parseInt($('wf').value)||0,wa=num($('wa').value),ws=$('ws').value||$('d').value||iso(today);
- PAY=[];SDAYS=0;let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,tsw=0,tp=0,cnt=-1;
+ PAY=[];SDAYS=0;LASTD=null;FIRSTD=null;let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,tsw=0,tp=0,cnt=-1;
  for(let k=1;k<=n;k++){
   while(dt.getDay()==0||dt.getDay()==6)dt.setDate(dt.getDate()+1);
   const key=iso(dt),beg=b,pr=beg*r;tp+=pr;
   let w=0;if(wf>0&&wa>0&&key>=ws){cnt++;if(cnt%wf===0)w=wa}
   const ex=man[key]||0;w=Math.min(w,beg+pr);tsw+=w;const e2=Math.min(ex,beg+pr-w);tw+=w+e2;b=beg+pr-w-e2;if(wf>0&&wa>0&&key>=ws)SDAYS++;if(w+e2>0)PAY.push([key,w+e2]);
   rows+=`<tr><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td>${m0(beg)}</td><td class="pos">${m0(pr)}</td><td>${w?`<div style="color:#d9534f">${m0(w)}</div>`:''}<input class="wd${ex?' man':''}" data-k="${key}" inputmode="decimal" value="${ex?Math.round(ex).toLocaleString():''}" placeholder="${w?'+ extra':'+'}"></td><td>${m0(b)}</td></tr>`;
-  LASTD=new Date(dt);dt.setDate(dt.getDate()+1);
+  if(!FIRSTD)FIRSTD=new Date(dt);LASTD=new Date(dt);dt.setDate(dt.getDate()+1);
  }
- $('end').textContent=money(b);
+ G={P,n,tw,tsw,b,tp};$('end').textContent=money(b);
  $('summary').innerHTML=`Total profit ${money(tp)} over ${n} trading days<br>(${(n/5).toFixed(1)} weeks, ${(n/21).toFixed(1)} months)`;
  $('wsum').innerHTML=`Total withdrawn ${money(tw)} (scheduled ${money(tsw)}, extra ${money(tw-tsw)})<br>Withdrawn + ending balance ${money(tw+b)}`;
  $('tbl').innerHTML=rows;
 }
-function applyURL(){const q=new URLSearchParams(location.search);let any=false;ids.forEach(i=>{if(q.has(i)){$(i).value=q.get(i);any=true}});if(typeof man!=='undefined'&&q.has('x')){try{man=JSON.parse(q.get('x'))}catch(_){}any=true}if(any)history.replaceState(null,'',location.pathname);return any}
+function applyURL(){const q=new URLSearchParams(location.search);let any=false;ids.forEach(i=>{if(q.has(i)){$(i).value=q.get(i);any=true}});if(any||q.has('x')){man={};if(q.has('x')){try{man=JSON.parse(q.get('x'))}catch(_){}}localStorage.setItem('cs1_extra',JSON.stringify(man));any=true}if(any)history.replaceState(null,'',location.pathname);return any}
 $('share').onclick=async()=>{const q=new URLSearchParams();['pf','p','wf','wa','ws'].forEach(i=>{if($(i).value)q.set(i,$(i).value)});if(Object.keys(man).length)q.set('x',JSON.stringify(man));
  const url=location.origin+location.pathname+'?'+q.toString();
  const fd=s=>{if(!s)return'';const[y,m,d]=s.split('-');return +m+'/'+ +d+'/'+y};
  const ex=Object.keys(man).sort().map(k=>fd(k)+' $'+Math.round(man[k]).toLocaleString()).join(', ');
- const PRN=num($('p').value),TW=PAY.reduce((t,x)=>t+x[1],0),EB=num($('end').textContent),BAL=TW+EB;
- let text=($('pf').value.trim()?'Prepared For:\n'+$('pf').value.trim()+'\n\n':'')+'Principal investment: $'+$('p').value+'\n\n';
- if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule:\n$'+$('wa').value+'\nFrequency:\nEvery '+$('wf').value+' trading days\n\n';
+ calc();const PRN=G.P,TW=G.tw,BAL=TW;const fdt=d=>(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();
+ let text=($('pf').value.trim()?'Prepared For:\n'+$('pf').value.trim()+'\n\n':'')+'Principal investment: '+money(PRN)+'\n\n';
+ if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule:\n'+money(num($('wa').value))+'\nFrequency:\nEvery '+$('wf').value+' trading days\n\n';
  text+=PAY.length?'Starting date: '+fd(PAY[0][0])+'\nEnding Date: '+fd(PAY[PAY.length-1][0])+'\n\n':'';
  text+='Please expect payment within 3 to 5 business days of each withdrawal date.\n\n';
  text+='Balance to be Paid:\n'+money(BAL)+'\n\nProfit:\n'+money(BAL-PRN)+(PRN>0?'\n('+((BAL-PRN)/PRN*100).toFixed(1)+'%)':'');
- if(PRN>0&&LASTD){const [y,m,d]=($('d').value||iso(today)).split('-').map(Number);const days=Math.max(1,Math.round((LASTD-new Date(y,m-1,d))/864e5)+1);const apy=(Math.pow(BAL/PRN,365/days)-1)*100;text+='\n\nEquivalent to '+(apy>=1000?Math.round(apy).toLocaleString():apy.toFixed(1))+'% APY';}
+ if(PRN>0&&PAY.length){const toD=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};const days=Math.round((toD(PAY[PAY.length-1][0])-FIRSTD)/864e5)+1;const ann=(BAL-PRN)/PRN*365/days*100;text+='\n\nEquivalent to about '+Math.round(ann).toLocaleString()+'% per year (simple, not compounded)';}
  text+='\n\nDisclosures: This is a hypothetical projection for illustration only and is not an offer, guarantee, or promise of any return or payment. Trading futures involves substantial risk of loss, including loss of principal, and past or modeled performance does not guarantee future results. Actual results, withdrawal amounts, and timing may differ materially. This is not investment, tax, or legal advice.';
  try{if(navigator.share){await navigator.share({text});return}}catch(e){if(e.name==='AbortError')return}
  try{await navigator.clipboard.writeText(text);alert('Copied to clipboard')}catch(_){prompt('Copy this link',url)}};
