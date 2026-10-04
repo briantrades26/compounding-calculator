@@ -35,6 +35,7 @@ input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-
 <div class="sub" style="font-weight:600;color:var(--txt)">Withdrawal Schedule (optional)</div>
 <label>Prepared For</label><input id="pf" type="text" autocomplete="off" placeholder="Name">
 <label>Every how many trading days</label><input id="wf" type="number" inputmode="numeric" placeholder="e.g. 5">
+<label>For how many trading days (blank = until end of term)</label><input id="wl" type="number" inputmode="numeric" placeholder="e.g. 60">
 <label>Amount ($)</label><input id="wa" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 2,500">
 <label>Starting Date</label><input id="ws" type="date">
 <div class="sub" style="margin-top:8px">Scheduled withdrawals show in the Withdraw column automatically. Tap the box in any row to type an extra withdrawal; it adds on top of the schedule.</div>
@@ -50,7 +51,7 @@ input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-
 <script>
 const $=id=>document.getElementById(id);
 const money=v=>'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});const m0=v=>'$'+Math.round(v).toLocaleString();
-let PAY=[],SDAYS=0,LASTD=null,FIRSTD=null,G={};const ids=['p','r','n','d','wf','wa','ws','pf'];let man=JSON.parse(localStorage.getItem('cs1_extra')||'{}');const num=v=>+String(v).replace(/[^\d.]/g,'')||0;const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+let PAY=[],SDAYS=0,LASTD=null,FIRSTD=null,G={};const ids=['p','r','n','d','wf','wa','ws','pf','wl'];let man=JSON.parse(localStorage.getItem('cs1_extra')||'{}');const num=v=>+String(v).replace(/[^\d.]/g,'')||0;const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=new Date();$('d').value=iso(today);
 ids.forEach(i=>{const s=localStorage.getItem('cs1_'+i);if(s)$(i).value=s;if(i!=='p'&&i!=='wa'){$(i).addEventListener('input',calc);$(i).addEventListener('change',calc)}});
 function fmtP(el){el=el&&el.nodeType?el:$('p');const v=el.value,pos=el.selectionStart??v.length;
@@ -66,13 +67,13 @@ function calc(){
  ids.forEach(i=>localStorage.setItem('cs1_'+i,$(i).value));
  const P=+$('p').value.replace(/,/g,'')||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
  const [y,m,dd]=($('d').value||iso(today)).split('-').map(Number);
- const wf=parseInt($('wf').value)||0,wa=num($('wa').value),ws=$('ws').value||$('d').value||iso(today);
+ const wl=parseInt($('wl').value)||0,wf=parseInt($('wf').value)||0,wa=num($('wa').value),ws=$('ws').value||$('d').value||iso(today);
  PAY=[];SDAYS=0;LASTD=null;FIRSTD=null;let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,tsw=0,tp=0,cnt=-1;
  for(let k=1;k<=n;k++){
   while(dt.getDay()==0||dt.getDay()==6)dt.setDate(dt.getDate()+1);
   const key=iso(dt),beg=b,pr=beg*r;tp+=pr;
-  let w=0;if(wf>0&&wa>0&&key>=ws){cnt++;if(cnt%wf===0)w=wa}
-  const ex=man[key]||0;w=Math.min(w,beg+pr);tsw+=w;const e2=Math.min(ex,beg+pr-w);tw+=w+e2;b=beg+pr-w-e2;if(wf>0&&wa>0&&key>=ws)SDAYS++;if(w+e2>0)PAY.push([key,w+e2]);
+  let w=0;const inS=wf>0&&wa>0&&key>=ws&&(!wl||cnt+1<wl);if(inS){cnt++;if(cnt%wf===0)w=wa}
+  const ex=man[key]||0;w=Math.min(w,beg+pr);tsw+=w;const e2=Math.min(ex,beg+pr-w);tw+=w+e2;b=beg+pr-w-e2;if(inS)SDAYS++;if(w+e2>0)PAY.push([key,w+e2]);
   rows+=`<tr><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td>${m0(beg)}</td><td class="pos">${m0(pr)}</td><td>${w?`<div style="color:#d9534f">${m0(w)}</div>`:''}<input class="wd${ex?' man':''}" data-k="${key}" inputmode="decimal" value="${ex?Math.round(ex).toLocaleString():''}" placeholder="${w?'+ extra':'+'}"></td><td>${m0(b)}</td></tr>`;
   if(!FIRSTD)FIRSTD=new Date(dt);LASTD=new Date(dt);dt.setDate(dt.getDate()+1);
  }
@@ -82,13 +83,13 @@ function calc(){
  $('tbl').innerHTML=rows;
 }
 function applyURL(){const q=new URLSearchParams(location.search);let any=false;ids.forEach(i=>{if(q.has(i)){$(i).value=q.get(i);any=true}});if(any||q.has('x')){man={};if(q.has('x')){try{man=JSON.parse(q.get('x'))}catch(_){}}localStorage.setItem('cs1_extra',JSON.stringify(man));any=true}if(any)history.replaceState(null,'',location.pathname);return any}
-$('share').onclick=async()=>{const q=new URLSearchParams();['pf','p','wf','wa','ws'].forEach(i=>{if($(i).value)q.set(i,$(i).value)});if(Object.keys(man).length)q.set('x',JSON.stringify(man));
+$('share').onclick=async()=>{const q=new URLSearchParams();['pf','p','wf','wa','ws','wl'].forEach(i=>{if($(i).value)q.set(i,$(i).value)});if(Object.keys(man).length)q.set('x',JSON.stringify(man));
  const url=location.origin+location.pathname+'?'+q.toString();
  const fd=s=>{if(!s)return'';const[y,m,d]=s.split('-');return +m+'/'+ +d+'/'+y};
  const ex=Object.keys(man).sort().map(k=>fd(k)+' $'+Math.round(man[k]).toLocaleString()).join(', ');
  calc();const PRN=G.P,TW=G.tw,BAL=TW;const fdt=d=>(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();
  let text=($('pf').value.trim()?'Prepared For:\n'+$('pf').value.trim()+'\n\n':'')+'Principal investment: '+money(PRN)+'\n\n';
- if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule:\n'+money(num($('wa').value))+'\nFrequency:\nEvery '+$('wf').value+' trading days\n\n';
+ if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule:\n'+money(num($('wa').value))+'\nFrequency:\nEvery '+$('wf').value+' trading days'+(+$('wl').value>0?'\nPeriod:\n'+$('wl').value+' trading days':'')+'\n\n';
  text+=PAY.length?'Starting date: '+fd(PAY[0][0])+'\nEnding Date: '+fd(PAY[PAY.length-1][0])+'\n\n':'';
  text+='Please expect payment within 3 to 5 business days of each withdrawal date.\n\n';
  text+='Balance to be Paid:\n'+money(BAL)+'\n\nProfit:\n'+money(BAL-PRN)+(PRN>0?'\n('+((BAL-PRN)/PRN*100).toFixed(1)+'%)':'');
