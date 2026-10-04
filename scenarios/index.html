@@ -88,7 +88,8 @@ $('share').onclick=async()=>{const q=new URLSearchParams();['pf','p','wf','wa','
  const ex=Object.keys(man).sort().map(k=>fd(k)+' $'+Math.round(man[k]).toLocaleString()).join(', ');
  const PRN=num($('p').value),TW=PAY.reduce((t,x)=>t+x[1],0),EB=num($('end').textContent),BAL=TW+EB;
  let text=($('pf').value.trim()?'Prepared For:\n'+$('pf').value.trim()+'\n\n':'')+'Principal investment: $'+$('p').value+'\n\n';
- if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule:\n$'+$('wa').value+'\nFrequency:\nEvery '+$('wf').value+' trading days\n\nStarting date: '+fd($('ws').value||$('d').value)+'\n\n';
+ if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule:\n$'+$('wa').value+'\nFrequency:\nEvery '+$('wf').value+' trading days\n\n';
+ text+=PAY.length?'Starting date: '+fd(PAY[0][0])+'\nEnding Date: '+fd(PAY[PAY.length-1][0])+'\n\n':'';
  text+='Please expect payment within 3 to 5 business days of the withdrawal dates below.\n\n';
  text+='Withdrawal Dates:\n'+(PAY.length?PAY.map(x=>fd(x[0])+'  $'+Math.round(x[1]).toLocaleString()).join('\n'):'None')+'\n\n';
  text+='Balance to be Paid:\n'+money(BAL)+'\n\nProfit:\n'+money(BAL-PRN);
