@@ -16,14 +16,14 @@
 h1{font-size:24px;margin:16px 4px 8px}
 .card{background:var(--card);border-radius:14px;padding:14px;margin:10px 0}
 label{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px}
-input{width:100%;font-size:17px;padding:11px;border-radius:10px;border:1px solid #8884;background:transparent;color:var(--txt)}
+input{width:100%;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;display:block;font-size:17px;padding:11px;border-radius:10px;border:1px solid #8884;background:transparent;color:var(--txt)}
 .big{font-size:28px;font-weight:700}.sub{color:var(--sub);font-size:13px}
 table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 th,td{text-align:right;padding:6px 2px;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #8883;white-space:nowrap}
 th{font-size:11px;color:var(--sub);position:sticky;top:0;background:var(--card)}
 th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.wd{width:100%;font-size:12px;padding:4px 2px;text-align:right;border-radius:6px;color:#d9534f}.wd.man{background:#ffcc0033;font-weight:600}.pos{color:var(--pos)}
 .wrap{overflow-x:auto}
-</style></head><body>
+input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-and-time-value{text-align:left}</style></head><body>
 <h1>Compounding Scenarios</h1>
 <div class="card">
 <label>Principal ($)</label><input id="p" type="text" inputmode="decimal" autocomplete="off" value="10,000">
@@ -94,8 +94,8 @@ $('share').onclick=async()=>{const q=new URLSearchParams();['pf','p','wf','wa','
  text+='Balance to be Paid:\n'+money(BAL)+'\n\nProfit:\n'+money(BAL-PRN)+(PRN>0?'\n('+((BAL-PRN)/PRN*100).toFixed(1)+'%)':'');
  if(PRN>0&&LASTD){const [y,m,d]=($('d').value||iso(today)).split('-').map(Number);const days=Math.max(1,Math.round((LASTD-new Date(y,m-1,d))/864e5)+1);const apy=(Math.pow(BAL/PRN,365/days)-1)*100;text+='\n\nEquivalent to '+(apy>=1000?Math.round(apy).toLocaleString():apy.toFixed(1))+'% APY';}
  text+='\n\nDisclosures: This is a hypothetical projection for illustration only and is not an offer, guarantee, or promise of any return or payment. Trading futures involves substantial risk of loss, including loss of principal, and past or modeled performance does not guarantee future results. Actual results, withdrawal amounts, and timing may differ materially. This is not investment, tax, or legal advice.';
- try{if(navigator.share){await navigator.share({title:'Withdrawal schedule',text,url});return}}catch(e){if(e.name==='AbortError')return}
- try{await navigator.clipboard.writeText(text+'\n'+url);alert('Copied to clipboard')}catch(_){prompt('Copy this link',url)}};
+ try{if(navigator.share){await navigator.share({text});return}}catch(e){if(e.name==='AbortError')return}
+ try{await navigator.clipboard.writeText(text);alert('Copied to clipboard')}catch(_){prompt('Copy this link',url)}};
 applyURL();['p','wa'].forEach(id=>fmtP($(id)));
 calc();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');

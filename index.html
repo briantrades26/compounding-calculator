@@ -16,14 +16,14 @@
 h1{font-size:24px;margin:16px 4px 8px}
 .card{background:var(--card);border-radius:14px;padding:14px;margin:10px 0}
 label{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px}
-input{width:100%;font-size:17px;padding:11px;border-radius:10px;border:1px solid #8884;background:transparent;color:var(--txt)}
+input{width:100%;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;display:block;font-size:17px;padding:11px;border-radius:10px;border:1px solid #8884;background:transparent;color:var(--txt)}
 .big{font-size:28px;font-weight:700}.sub{color:var(--sub);font-size:13px}
 table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 th,td{text-align:right;padding:6px 2px;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #8883;white-space:nowrap}
 th{font-size:11px;color:var(--sub);position:sticky;top:0;background:var(--card)}
 th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.pos{color:var(--pos)}
 .wrap{overflow-x:auto}
-</style></head><body>
+input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-and-time-value{text-align:left}</style></head><body>
 <h1>Compounding Calculator</h1>
 <div class="card">
 <label>Principal ($)</label><input id="p" type="text" inputmode="decimal" autocomplete="off" value="10,000">
