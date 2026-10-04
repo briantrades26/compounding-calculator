@@ -33,6 +33,7 @@ th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.wd{width:100%;font-size:1
 </div>
 <div class="card">
 <div class="sub" style="font-weight:600;color:var(--txt)">Withdrawal Schedule (optional)</div>
+<label>Prepared For</label><input id="pf" type="text" autocomplete="off" placeholder="Name">
 <label>Every how many trading days</label><input id="wf" type="number" inputmode="numeric" placeholder="e.g. 5">
 <label>Amount ($)</label><input id="wa" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 2,500">
 <label>Starting Date</label><input id="ws" type="date">
@@ -49,7 +50,7 @@ th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.wd{width:100%;font-size:1
 <script>
 const $=id=>document.getElementById(id);
 const money=v=>'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});const m0=v=>'$'+Math.round(v).toLocaleString();
-let PAY=[],SDAYS=0;const ids=['p','r','n','d','wf','wa','ws'];let man=JSON.parse(localStorage.getItem('cs1_extra')||'{}');const num=v=>+String(v).replace(/[^\d.]/g,'')||0;const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+let PAY=[],SDAYS=0;const ids=['p','r','n','d','wf','wa','ws','pf'];let man=JSON.parse(localStorage.getItem('cs1_extra')||'{}');const num=v=>+String(v).replace(/[^\d.]/g,'')||0;const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=new Date();$('d').value=iso(today);
 ids.forEach(i=>{const s=localStorage.getItem('cs1_'+i);if(s)$(i).value=s;if(i!=='p'&&i!=='wa'){$(i).addEventListener('input',calc);$(i).addEventListener('change',calc)}});
 function fmtP(el){el=el&&el.nodeType?el:$('p');const v=el.value,pos=el.selectionStart??v.length;
@@ -81,12 +82,12 @@ function calc(){
  $('tbl').innerHTML=rows;
 }
 function applyURL(){const q=new URLSearchParams(location.search);let any=false;ids.forEach(i=>{if(q.has(i)){$(i).value=q.get(i);any=true}});if(typeof man!=='undefined'&&q.has('x')){try{man=JSON.parse(q.get('x'))}catch(_){}any=true}if(any)history.replaceState(null,'',location.pathname);return any}
-$('share').onclick=async()=>{const q=new URLSearchParams();['p','wf','wa','ws'].forEach(i=>{if($(i).value)q.set(i,$(i).value)});if(Object.keys(man).length)q.set('x',JSON.stringify(man));
+$('share').onclick=async()=>{const q=new URLSearchParams();['pf','p','wf','wa','ws'].forEach(i=>{if($(i).value)q.set(i,$(i).value)});if(Object.keys(man).length)q.set('x',JSON.stringify(man));
  const url=location.origin+location.pathname+'?'+q.toString();
  const fd=s=>{if(!s)return'';const[y,m,d]=s.split('-');return +m+'/'+ +d+'/'+y};
  const ex=Object.keys(man).sort().map(k=>fd(k)+' $'+Math.round(man[k]).toLocaleString()).join(', ');
  const PRN=num($('p').value),TW=PAY.reduce((t,x)=>t+x[1],0),EB=num($('end').textContent),BAL=TW+EB;
- let text='Principal investment: $'+$('p').value+'\n\n';
+ let text=($('pf').value.trim()?'Prepared For:\n'+$('pf').value.trim()+'\n\n':'')+'Principal investment: $'+$('p').value+'\n\n';
  if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule:\n$'+$('wa').value+'\nFrequency:\nEvery '+$('wf').value+' trading days\n\nStarting date: '+fd($('ws').value||$('d').value)+'\n\n';
  text+='Please expect payment within 3 to 5 business days of the withdrawal dates below.\n\n';
  text+='Withdrawal Dates:\n'+(PAY.length?PAY.map(x=>fd(x[0])+'  $'+Math.round(x[1]).toLocaleString()).join('\n'):'None')+'\n\n';
