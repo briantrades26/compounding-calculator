@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Scenarios">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>Compounding Scenarios</title>
+<style>
+:root{color-scheme:light dark;--bg:#f2f2f7;--card:#fff;--txt:#111;--sub:#6b6b70;--pos:#1f9d55}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--txt:#f2f2f7;--sub:#9a9aa0}}
+*{box-sizing:border-box}body{margin:0;font:16px -apple-system,system-ui,sans-serif;background:var(--bg);color:var(--txt);padding:env(safe-area-inset-top) 10px 40px}
+h1{font-size:24px;margin:16px 4px 8px}
+.card{background:var(--card);border-radius:14px;padding:14px;margin:10px 0}
+label{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px}
+input{width:100%;font-size:17px;padding:11px;border-radius:10px;border:1px solid #8884;background:transparent;color:var(--txt)}
+.big{font-size:28px;font-weight:700}.sub{color:var(--sub);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+th,td{text-align:right;padding:6px 2px;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #8883;white-space:nowrap}
+th{font-size:11px;color:var(--sub);position:sticky;top:0;background:var(--card)}
+th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.wd{width:100%;font-size:12px;padding:4px 2px;text-align:right;border-radius:6px;color:#d9534f}.wd.man{background:#ffcc0033;font-weight:600}.pos{color:var(--pos)}
+.wrap{overflow-x:auto}
+</style></head><body>
+<h1>Compounding Scenarios</h1>
+<div class="card">
+<label>Principal ($)</label><input id="p" type="text" inputmode="decimal" autocomplete="off" value="10,000">
+<label>Daily Profit Rate (%)</label><input id="r" type="number" inputmode="decimal" value="2">
+<label>Length of Term (trading days, weekends excluded)</label><input id="n" type="number" inputmode="numeric" value="20">
+<label>Start Date</label><input id="d" type="date">
+</div>
+<div class="card">
+<div class="sub" style="font-weight:600;color:var(--txt)">Withdrawal Schedule (optional)</div>
+<label>Every how many trading days</label><input id="wf" type="number" inputmode="numeric" placeholder="e.g. 5">
+<label>Amount ($)</label><input id="wa" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 2,500">
+<label>Starting Date</label><input id="ws" type="date">
+<div class="sub" style="margin-top:8px">Scheduled withdrawals show in the Withdraw column automatically. Tap the box in any row to type an extra withdrawal; it adds on top of the schedule.</div>
+<button id="clr" style="margin-top:10px;font-size:15px;padding:9px 12px;border-radius:10px;border:1px solid #8884;background:transparent;color:var(--txt)">Clear extra withdrawals</button>
+</div>
+<div class="card">
+<div class="sub">Ending Balance</div><div class="big" id="end">$0</div>
+<div class="sub" id="summary"></div><div class="sub" id="wsum"></div>
+</div>
+<div class="card wrap"><table>
+<thead><tr><th style="width:8%">Day</th><th style="width:13%">Date</th><th style="width:21%">Beg Bal</th><th style="width:17%">Profit</th><th style="width:20%">Withdraw</th><th style="width:21%">End Bal</th></tr></thead>
+<tbody id="tbl"></tbody></table></div>
+<script>
+const $=id=>document.getElementById(id);
+const money=v=>'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});const m0=v=>'$'+Math.round(v).toLocaleString();
+const ids=['p','r','n','d','wf','wa','ws'];let man=JSON.parse(localStorage.getItem('cs1_extra')||'{}');const num=v=>+String(v).replace(/[^\d.]/g,'')||0;const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=new Date();$('d').value=iso(today);
+ids.forEach(i=>{const s=localStorage.getItem('cs1_'+i);if(s)$(i).value=s;if(i!=='p'&&i!=='wa'){$(i).addEventListener('input',calc);$(i).addEventListener('change',calc)}});
+function fmtP(el){el=el&&el.nodeType?el:$('p');const v=el.value,pos=el.selectionStart??v.length;
+ const digitsBefore=v.slice(0,pos).replace(/[^\d.]/g,'').length;
+ let raw=v.replace(/[^\d.]/g,'');const k=raw.indexOf('.');if(k>=0)raw=raw.slice(0,k+1)+raw.slice(k+1).replace(/\./g,'').slice(0,2);
+ const [a,b]=raw.split('.');const out=(a?a.replace(/^0+(?=\d)/,'').replace(/\B(?=(\d{3})+(?!\d))/g,','):(b!==undefined?'0':''))+(b!==undefined?'.'+b:'');
+ el.value=out;let c=0,i=0;while(i<out.length&&c<digitsBefore){if(/[\d.]/.test(out[i]))c++;i++}
+ if(document.activeElement===el&&el.value!==v){const j=i;requestAnimationFrame(()=>{try{el.setSelectionRange(j,j)}catch(_){}})}}
+['p','wa'].forEach(id=>{['input','keyup','change'].forEach(ev=>$(id).addEventListener(ev,()=>{fmtP($(id));calc()}));fmtP($(id))});
+$('clr').onclick=()=>{man={};localStorage.setItem('cs1_extra','{}');calc()};
+$('tbl').addEventListener('change',e=>{const t=e.target;if(!t.classList.contains('wd'))return;const k=t.dataset.k;if(num(t.value)<=0)delete man[k];else man[k]=num(t.value);localStorage.setItem('cs1_extra',JSON.stringify(man));calc()});
+function calc(){
+ ids.forEach(i=>localStorage.setItem('cs1_'+i,$(i).value));
+ const P=+$('p').value.replace(/,/g,'')||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
+ const [y,m,dd]=($('d').value||iso(today)).split('-').map(Number);
+ const wf=parseInt($('wf').value)||0,wa=num($('wa').value),ws=$('ws').value||$('d').value||iso(today);
+ let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,tsw=0,tp=0,cnt=-1;
+ for(let k=1;k<=n;k++){
+  while(dt.getDay()==0||dt.getDay()==6)dt.setDate(dt.getDate()+1);
+  const key=iso(dt),beg=b,pr=beg*r;tp+=pr;
+  let w=0;if(wf>0&&wa>0&&key>=ws){cnt++;if(cnt%wf===0)w=wa}
+  const ex=man[key]||0;w=Math.min(w,beg+pr);tsw+=w;const e2=Math.min(ex,beg+pr-w);tw+=w+e2;b=beg+pr-w-e2;
+  rows+=`<tr><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td>${m0(beg)}</td><td class="pos">${m0(pr)}</td><td>${w?`<div style="color:#d9534f">${m0(w)}</div>`:''}<input class="wd${ex?' man':''}" data-k="${key}" inputmode="decimal" value="${ex?Math.round(ex).toLocaleString():''}" placeholder="${w?'+ extra':'+'}"></td><td>${m0(b)}</td></tr>`;
+  dt.setDate(dt.getDate()+1);
+ }
+ $('end').textContent=money(b);
+ $('summary').innerHTML=`Total profit ${money(tp)} over ${n} trading days<br>(${(n/5).toFixed(1)} weeks, ${(n/21).toFixed(1)} months)`;
+ $('wsum').innerHTML=`Total withdrawn ${money(tw)} (scheduled ${money(tsw)}, extra ${money(tw-tsw)})<br>Withdrawn + ending balance ${money(tw+b)}`;
+ $('tbl').innerHTML=rows;
+}
+calc();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v1</div></body></html>
