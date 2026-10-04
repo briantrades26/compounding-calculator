@@ -91,7 +91,7 @@ $('share').onclick=async()=>{const q=new URLSearchParams();['pf','p','wf','wa','
  if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule:\n$'+$('wa').value+'\nFrequency:\nEvery '+$('wf').value+' trading days\n\n';
  text+=PAY.length?'Starting date: '+fd(PAY[0][0])+'\nEnding Date: '+fd(PAY[PAY.length-1][0])+'\n\n':'';
  text+='Please expect payment within 3 to 5 business days of each withdrawal date.\n\n';
- text+='Balance to be Paid:\n'+money(BAL)+'\n\nProfit:\n'+money(BAL-PRN);
+ text+='Balance to be Paid:\n'+money(BAL)+'\n\nProfit:\n'+money(BAL-PRN)+(PRN>0?'\n('+((BAL-PRN)/PRN*100).toFixed(1)+'%)':'');
  if(PRN>0&&LASTD){const [y,m,d]=($('d').value||iso(today)).split('-').map(Number);const days=Math.max(1,Math.round((LASTD-new Date(y,m-1,d))/864e5)+1);const apy=(Math.pow(BAL/PRN,365/days)-1)*100;text+='\n\nEquivalent to '+(apy>=1000?Math.round(apy).toLocaleString():apy.toFixed(1))+'% APY';}
  text+='\n\nDisclosures: This is a hypothetical projection for illustration only and is not an offer, guarantee, or promise of any return or payment. Trading futures involves substantial risk of loss, including loss of principal, and past or modeled performance does not guarantee future results. Actual results, withdrawal amounts, and timing may differ materially. This is not investment, tax, or legal advice.';
  try{if(navigator.share){await navigator.share({title:'Withdrawal schedule',text,url});return}}catch(e){if(e.name==='AbortError')return}
