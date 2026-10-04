@@ -81,11 +81,11 @@ function calc(){
  $('tbl').innerHTML=rows;
 }
 function applyURL(){const q=new URLSearchParams(location.search);let any=false;ids.forEach(i=>{if(q.has(i)){$(i).value=q.get(i);any=true}});if(typeof man!=='undefined'&&q.has('x')){try{man=JSON.parse(q.get('x'))}catch(_){}any=true}if(any)history.replaceState(null,'',location.pathname);return any}
-$('share').onclick=async()=>{const q=new URLSearchParams();['wf','wa','ws'].forEach(i=>{if($(i).value)q.set(i,$(i).value)});if(Object.keys(man).length)q.set('x',JSON.stringify(man));
+$('share').onclick=async()=>{const q=new URLSearchParams();['p','wf','wa','ws'].forEach(i=>{if($(i).value)q.set(i,$(i).value)});if(Object.keys(man).length)q.set('x',JSON.stringify(man));
  const url=location.origin+location.pathname+'?'+q.toString();
  const fd=s=>{if(!s)return'';const[y,m,d]=s.split('-');return +m+'/'+ +d+'/'+y};
  const ex=Object.keys(man).sort().map(k=>fd(k)+' $'+Math.round(man[k]).toLocaleString()).join(', ');
- let text='';
+ let text='Principal investment: $'+$('p').value+'\n';
  if(+$('wf').value>0&&num($('wa').value)>0)text+='Schedule: $'+$('wa').value+' every '+$('wf').value+' trading days, starting '+fd($('ws').value||$('d').value)+', running '+SDAYS+' trading days.\n';
  text+=PAY.length?'First payout: '+fd(PAY[0][0])+'\nPayouts:\n'+PAY.map(x=>fd(x[0])+'  $'+Math.round(x[1]).toLocaleString()).join('\n')+'\n':'No payouts.\n';
  text+=$('wsum').innerText;
@@ -94,4 +94,4 @@ $('share').onclick=async()=>{const q=new URLSearchParams();['wf','wa','ws'].forE
 applyURL();['p','wa'].forEach(id=>fmtP($(id)));
 calc();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v4</div></body></html>
+</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v5</div></body></html>
