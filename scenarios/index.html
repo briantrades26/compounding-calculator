@@ -42,7 +42,7 @@ th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.wd{width:100%;font-size:1
 <div class="card">
 <div class="sub">Ending Balance</div><div class="big" id="end">$0</div>
 <div class="sub" id="summary"></div><div class="sub" id="wsum"></div>
-</div>
+<button id="share" style="width:100%;margin-top:12px;font-size:17px;font-weight:600;padding:12px;border-radius:12px;border:0;background:#1f9d55;color:#fff">Share</button></div>
 <div class="card wrap"><table>
 <thead><tr><th style="width:8%">Day</th><th style="width:13%">Date</th><th style="width:21%">Beg Bal</th><th style="width:17%">Profit</th><th style="width:20%">Withdraw</th><th style="width:21%">End Bal</th></tr></thead>
 <tbody id="tbl"></tbody></table></div>
@@ -80,6 +80,13 @@ function calc(){
  $('wsum').innerHTML=`Total withdrawn ${money(tw)} (scheduled ${money(tsw)}, extra ${money(tw-tsw)})<br>Withdrawn + ending balance ${money(tw+b)}`;
  $('tbl').innerHTML=rows;
 }
+function applyURL(){const q=new URLSearchParams(location.search);let any=false;ids.forEach(i=>{if(q.has(i)){$(i).value=q.get(i);any=true}});if(typeof man!=='undefined'&&q.has('x')){try{man=JSON.parse(q.get('x'))}catch(_){}any=true}if(any)history.replaceState(null,'',location.pathname);return any}
+$('share').onclick=async()=>{const q=new URLSearchParams();ids.forEach(i=>{if($(i).value)q.set(i,$(i).value)});if(typeof man!=='undefined'&&Object.keys(man).length)q.set('x',JSON.stringify(man));
+ const url=location.origin+location.pathname+'?'+q.toString();
+ const text=document.title+': '+$('p').value.replace(/^/,'$')+' at '+$('r').value+'%/day for '+$('n').value+' trading days. Ending balance '+$('end').textContent+'. '+$('summary').innerText.replace(/\n/g,' ')+(document.getElementById('wsum')?' '+$('wsum').innerText.replace(/\n/g,' '):'');
+ try{if(navigator.share){await navigator.share({title:document.title,text,url});return}}catch(e){if(e.name==='AbortError')return}
+ try{await navigator.clipboard.writeText(text+'\n'+url);alert('Copied to clipboard')}catch(_){prompt('Copy this link',url)}};
+applyURL();['p','wa'].forEach(id=>fmtP($(id)));
 calc();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v1</div></body></html>
+</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v2</div></body></html>
