@@ -26,7 +26,7 @@ th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.pos{color:var(--pos)}
 </style></head><body>
 <h1>Compounding Calculator</h1>
 <div class="card">
-<label>Principal ($)</label><input id="p" type="number" inputmode="decimal" value="10000">
+<label>Principal ($)</label><input id="p" type="text" inputmode="decimal" autocomplete="off" value="10,000">
 <label>Daily Profit Rate (%)</label><input id="r" type="number" inputmode="decimal" value="2">
 <label>Length of Term (trading days, weekends excluded)</label><input id="n" type="number" inputmode="numeric" value="20">
 <label>Start Date</label><input id="d" type="date">
@@ -44,9 +44,16 @@ const money=v=>'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFr
 const ids=['p','r','n','d'];
 const today=new Date();$('d').value=today.toISOString().slice(0,10);
 ids.forEach(i=>{const s=localStorage.getItem('cc2_'+i);if(s)$(i).value=s;$(i).addEventListener('input',calc)});
+function fmtP(){const el=$('p'),v=el.value,pos=el.selectionStart??v.length;
+ const digitsBefore=v.slice(0,pos).replace(/[^\d.]/g,'').length;
+ let raw=v.replace(/[^\d.]/g,'');const k=raw.indexOf('.');if(k>=0)raw=raw.slice(0,k+1)+raw.slice(k+1).replace(/\./g,'').slice(0,2);
+ const [a,b]=raw.split('.');const out=(a?a.replace(/^0+(?=\d)/,'').replace(/\B(?=(\d{3})+(?!\d))/g,','):(b!==undefined?'0':''))+(b!==undefined?'.'+b:'');
+ el.value=out;let c=0,i=0;while(i<out.length&&c<digitsBefore){if(/[\d.]/.test(out[i]))c++;i++}
+ if(document.activeElement===el)el.setSelectionRange(i,i);}
+$('p').addEventListener('input',fmtP,true);fmtP();
 function calc(){
  ids.forEach(i=>localStorage.setItem('cc2_'+i,$(i).value));
- const P=+$('p').value||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
+ const P=+$('p').value.replace(/,/g,'')||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
  const [y,m,dd]=($('d').value||today.toISOString().slice(0,10)).split('-').map(Number);
  let dt=new Date(y,m-1,dd),b=P,rows='';
  for(let k=1;k<=n;k++){
