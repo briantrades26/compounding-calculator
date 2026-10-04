@@ -90,10 +90,10 @@ $('share').onclick=async()=>{const q=new URLSearchParams();['pf','p','wf','wa','
  let text=($('pf').value.trim()?'Prepared For:\n'+$('pf').value.trim()+'\n\n':'')+'Principal investment: $'+$('p').value+'\n\n';
  if(+$('wf').value>0&&num($('wa').value)>0)text+='Payout schedule:\n$'+$('wa').value+'\nFrequency:\nEvery '+$('wf').value+' trading days\n\n';
  text+=PAY.length?'Starting date: '+fd(PAY[0][0])+'\nEnding Date: '+fd(PAY[PAY.length-1][0])+'\n\n':'';
- text+='Please expect payment within 3 to 5 business days of the withdrawal dates below.\n\n';
- text+='Withdrawal Dates:\n'+(PAY.length?PAY.map(x=>fd(x[0])+'  $'+Math.round(x[1]).toLocaleString()).join('\n'):'None')+'\n\n';
+ text+='Please expect payment within 3 to 5 business days of each withdrawal date.\n\n';
  text+='Balance to be Paid:\n'+money(BAL)+'\n\nProfit:\n'+money(BAL-PRN);
  if(PRN>0&&LASTD){const [y,m,d]=($('d').value||iso(today)).split('-').map(Number);const days=Math.max(1,Math.round((LASTD-new Date(y,m-1,d))/864e5)+1);const apy=(Math.pow(BAL/PRN,365/days)-1)*100;text+='\n\nEquivalent to '+(apy>=1000?Math.round(apy).toLocaleString():apy.toFixed(1))+'% APY';}
+ text+='\n\nDisclosures: This is a hypothetical projection for illustration only and is not an offer, guarantee, or promise of any return or payment. Trading futures involves substantial risk of loss, including loss of principal, and past or modeled performance does not guarantee future results. Actual results, withdrawal amounts, and timing may differ materially. This is not investment, tax, or legal advice.';
  try{if(navigator.share){await navigator.share({title:'Withdrawal schedule',text,url});return}}catch(e){if(e.name==='AbortError')return}
  try{await navigator.clipboard.writeText(text+'\n'+url);alert('Copied to clipboard')}catch(_){prompt('Copy this link',url)}};
 applyURL();['p','wa'].forEach(id=>fmtP($(id)));
