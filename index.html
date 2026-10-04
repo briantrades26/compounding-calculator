@@ -56,7 +56,7 @@ function calc(){
   dt.setDate(dt.getDate()+1);
  }
  $('end').textContent=money(b);
- $('summary').textContent=`Total profit ${money(b-P)} over ${n} trading days`;
+ $('summary').innerHTML=`Total profit ${money(b-P)} over ${n} trading days<br>${(n/5).toFixed(1)} weeks, ${(n/21).toFixed(1)} months`;
  $('tbl').innerHTML=rows;
 }
 calc();
