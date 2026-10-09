@@ -43,7 +43,7 @@ input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-
 const $=id=>document.getElementById(id);
 const money=v=>'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});const m0=v=>'$'+Math.round(v).toLocaleString();
 const ids=['p','r','n','d','e'];
-const today=new Date();$('d').value=today.toISOString().slice(0,10);
+const today=new Date();const iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');$('d').value=iso(today);
 ids.forEach(i=>{const s=localStorage.getItem('cc2_'+i);if(s)$(i).value=s;if(i!=='p'){$(i).addEventListener('input',calc);$(i).addEventListener('change',calc)}});
 function fmtP(){const el=$('p'),v=el.value,pos=el.selectionStart??v.length;
  const digitsBefore=v.slice(0,pos).replace(/[^\d.]/g,'').length;
@@ -55,17 +55,17 @@ function fmtP(){const el=$('p'),v=el.value,pos=el.selectionStart??v.length;
 function tradingDays(a,b){const [y1,m1,d1]=a.split('-').map(Number),[y2,m2,d2]=b.split('-').map(Number);let t=new Date(y1,m1-1,d1),e=new Date(y2,m2-1,d2),c=0;while(t<=e){const w=t.getDay();if(w!==0&&w!==6)c++;t.setDate(t.getDate()+1)}return c}
 $('eclr').onclick=ev=>{ev.preventDefault();$('e').value='';calc()};
 function calc(){
- const sd=$('d').value||today.toISOString().slice(0,10),ed=$('e').value;
+ const sd=$('d').value||iso(today),ed=$('e').value;
  if(ed){$('n').value=tradingDays(sd,ed);$('n').disabled=true;$('n').style.opacity=.5}else{$('n').disabled=false;$('n').style.opacity=''}
  $('eclr').style.display=ed?'':'none';
  ids.forEach(i=>localStorage.setItem('cc2_'+i,$(i).value));
  const P=+$('p').value.replace(/,/g,'')||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
- const [y,m,dd]=($('d').value||today.toISOString().slice(0,10)).split('-').map(Number);
+ const [y,m,dd]=($('d').value||iso(today)).split('-').map(Number);
  let dt=new Date(y,m-1,dd),b=P,rows='';
  for(let k=1;k<=n;k++){
   while(dt.getDay()==0||dt.getDay()==6)dt.setDate(dt.getDate()+1);
   const beg=b,pr=beg*r;b=beg+pr;
-  rows+=`<tr><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td>${m0(beg)}</td><td class="pos">${m0(pr)}</td><td>${m0(b)}</td></tr>`;
+  rows=`<tr><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td>${m0(beg)}</td><td class="pos">${m0(pr)}</td><td>${m0(b)}</td></tr>`+rows;
   dt.setDate(dt.getDate()+1);
  }
  $('end').textContent=money(b);
@@ -81,4 +81,4 @@ $('share').onclick=async()=>{const q=new URLSearchParams();ids.forEach(i=>{if($(
 applyURL();fmtP();
 calc();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v8</div></body></html>
+</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v9</div></body></html>
