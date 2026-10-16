@@ -40,7 +40,7 @@ input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-
 <div class="card">
 <div class="sub">Ending Balance</div><div class="big" id="end">$0</div>
 <div class="sub" id="summary"></div>
-<button id="share" style="width:100%;margin-top:12px;font-size:17px;font-weight:600;padding:12px;border-radius:12px;border:0;background:#1f9d55;color:#fff">Share</button></div>
+<button id="share" style="width:100%;margin-top:12px;font-size:17px;font-weight:600;padding:12px;border-radius:12px;border:0;background:#1f9d55;color:#fff">Share</button><button id="reset" style="width:100%;margin-top:8px;font-size:15px;font-weight:600;padding:10px;border-radius:12px;border:1px solid #8886;background:transparent;color:var(--sub)">Reset</button></div>
 <div class="card wrap"><table>
 <thead><tr><th style="width:7%">Day</th><th style="width:12%">Date</th><th style="width:20%">Beg Bal</th><th style="width:17%">Profit</th><th style="width:22%">Withdrawal</th><th style="width:22%">End Bal</th></tr></thead>
 <tbody id="tbl"></tbody></table></div>
@@ -94,5 +94,8 @@ calc();
 function padBar(){document.body.style.paddingTop=$('bar').offsetHeight+'px'}
 function posBar(){const v=window.visualViewport;$('bar').style.transform=v?`translateY(${Math.max(0,v.offsetTop)}px)`:''}
 if(window.visualViewport){visualViewport.addEventListener('resize',posBar);visualViewport.addEventListener('scroll',posBar)}window.addEventListener('scroll',posBar);window.addEventListener('resize',padBar);padBar();posBar();
+$('reset').onclick=()=>{if(!confirm("Reset calculator? This clears all withdrawals and resets inputs to defaults."))return;
+ Object.keys(localStorage).filter(k=>k==='cc2_w'||k.startsWith('cc2_wd')).forEach(k=>localStorage.removeItem(k));W={};
+ ids.forEach(i=>{localStorage.removeItem('cc2_'+i);$(i).value=$(i).defaultValue});$('d').value=iso(new Date());$('e').value='';fmtP();calc();padBar()};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v11</div></body></html>
+</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v12</div></body></html>
