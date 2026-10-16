@@ -21,6 +21,9 @@ input{width:100%;min-width:0;max-width:100%;-webkit-appearance:none;appearance:n
 table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 th,td{text-align:right;padding:6px 2px;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #8883;white-space:nowrap}
 th{font-size:11px;color:var(--sub);position:sticky;top:0;background:var(--card)}
+.pin{position:sticky;top:0;z-index:5;box-shadow:0 2px 8px #0003}
+input.w{font-size:16px;padding:4px 3px;border-radius:6px;text-align:right;background:#ffd60a22}
+.neg{color:#e53935!important;font-weight:700}
 th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.pos{color:var(--pos)}
 .wrap{overflow-x:auto}
 input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-and-time-value{text-align:left}</style></head><body>
@@ -32,15 +35,17 @@ input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-
 <label>Start Date</label><input id="d" type="date">
 <label>End Date (optional, overrides Length of Term) <a href="#" id="eclr" style="float:right;color:var(--pos);text-decoration:none">Clear</a></label><input id="e" type="date">
 </div>
-<div class="card">
+<div class="card pin">
 <div class="sub">Ending Balance</div><div class="big" id="end">$0</div>
 <div class="sub" id="summary"></div>
 <button id="share" style="width:100%;margin-top:12px;font-size:17px;font-weight:600;padding:12px;border-radius:12px;border:0;background:#1f9d55;color:#fff">Share</button></div>
 <div class="card wrap"><table>
-<thead><tr><th style="width:9%">Day</th><th style="width:15%">Date</th><th style="width:26%">Beg Bal</th><th style="width:22%">Profit</th><th style="width:28%">End Bal</th></tr></thead>
+<thead><tr><th style="width:7%">Day</th><th style="width:12%">Date</th><th style="width:20%">Beg Bal</th><th style="width:17%">Profit</th><th style="width:22%">Withdrawal</th><th style="width:22%">End Bal</th></tr></thead>
 <tbody id="tbl"></tbody></table></div>
 <script>
 const $=id=>document.getElementById(id);
+let W={};try{W=JSON.parse(localStorage.getItem('cc2_w')||'{}')}catch(_){W={}}
+
 const money=v=>'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});const m0=v=>'$'+Math.round(v).toLocaleString();
 const ids=['p','r','n','d','e'];
 const today=new Date();const iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');$('d').value=iso(today);
@@ -54,24 +59,28 @@ function fmtP(){const el=$('p'),v=el.value,pos=el.selectionStart??v.length;
 ['input','keyup','change'].forEach(ev=>$('p').addEventListener(ev,()=>{fmtP();calc()}));fmtP();
 function tradingDays(a,b){const [y1,m1,d1]=a.split('-').map(Number),[y2,m2,d2]=b.split('-').map(Number);let t=new Date(y1,m1-1,d1),e=new Date(y2,m2-1,d2),c=0;while(t<=e){const w=t.getDay();if(w!==0&&w!==6)c++;t.setDate(t.getDate()+1)}return c}
 $('eclr').onclick=ev=>{ev.preventDefault();$('e').value='';calc()};
-function calc(){
+function calc(full){
+ if(full===undefined)full=true;
  const sd=$('d').value||iso(today),ed=$('e').value;
  if(ed){$('n').value=tradingDays(sd,ed);$('n').disabled=true;$('n').style.opacity=.5}else{$('n').disabled=false;$('n').style.opacity=''}
  $('eclr').style.display=ed?'':'none';
  ids.forEach(i=>localStorage.setItem('cc2_'+i,$(i).value));
  const P=+$('p').value.replace(/,/g,'')||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
  const [y,m,dd]=($('d').value||iso(today)).split('-').map(Number);
- let dt=new Date(y,m-1,dd),b=P,rows='';
+ let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,neg=false;const data=[];
  for(let k=1;k<=n;k++){
   while(dt.getDay()==0||dt.getDay()==6)dt.setDate(dt.getDate()+1);
-  const beg=b,pr=beg*r;b=beg+pr;
-  rows=`<tr><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td>${m0(beg)}</td><td class="pos">${m0(pr)}</td><td>${m0(b)}</td></tr>`+rows;
+  const key=iso(dt),w=+String(W[key]||'').replace(/[,$]/g,'')||0;
+  const beg=b,pr=beg*r;b=beg+pr-w;tw+=w;if(b<0)neg=true;
+  data.push({key,beg,pr,b});
+  if(full){const wv=W[key]||'';rows=`<tr data-k="${key}"><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td class="bg${beg<0?' neg':''}">${m0(beg)}</td><td class="pos pr">${m0(pr)}</td><td><input class="w" data-k="${key}" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="${String(wv).replace(/"/g,'')}"></td><td class="eb${b<0?' neg':''}">${m0(b)}</td></tr>`+rows}
   dt.setDate(dt.getDate()+1);
  }
- $('end').textContent=money(b);
- $('summary').innerHTML=`Total profit ${money(b-P)} over ${n} trading days<br>(${(n/5).toFixed(1)} weeks, ${(n/21).toFixed(1)} months)`;
- $('tbl').innerHTML=rows;
+ $('end').textContent=money(b);$('end').classList.toggle('neg',b<0);
+ $('summary').innerHTML=`Total profit ${money(b-P+tw)} over ${n} trading days<br>Total withdrawals ${money(tw)}<br>(${(n/5).toFixed(1)} weeks, ${(n/21).toFixed(1)} months)`+(neg?'<br><span class="neg">Balance goes negative</span>':'');
+ if(full){$('tbl').innerHTML=rows}else{data.forEach(o=>{const tr=$('tbl').querySelector(`tr[data-k="${o.key}"]`);if(!tr)return;const bg=tr.querySelector('.bg'),pr=tr.querySelector('.pr'),eb=tr.querySelector('.eb');bg.textContent=m0(o.beg);bg.classList.toggle('neg',o.beg<0);pr.textContent=m0(o.pr);eb.textContent=m0(o.b);eb.classList.toggle('neg',o.b<0)})}
 }
+$('tbl').addEventListener('input',ev=>{const t=ev.target;if(!t.classList.contains('w'))return;const v=t.value.trim();if(v)W[t.dataset.k]=v;else delete W[t.dataset.k];localStorage.setItem('cc2_w',JSON.stringify(W));calc(false)});
 function applyURL(){const q=new URLSearchParams(location.search);let any=false;ids.forEach(i=>{if(q.has(i)){$(i).value=q.get(i);any=true}});if(typeof man!=='undefined'&&q.has('x')){try{man=JSON.parse(q.get('x'))}catch(_){}any=true}if(any)history.replaceState(null,'',location.pathname);return any}
 $('share').onclick=async()=>{const q=new URLSearchParams();ids.forEach(i=>{if($(i).value)q.set(i,$(i).value)});if(typeof man!=='undefined'&&Object.keys(man).length)q.set('x',JSON.stringify(man));
  const url=location.origin+location.pathname+'?'+q.toString();
@@ -81,4 +90,4 @@ $('share').onclick=async()=>{const q=new URLSearchParams();ids.forEach(i=>{if($(
 applyURL();fmtP();
 calc();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v9</div></body></html>
+</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v10</div></body></html>
