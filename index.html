@@ -24,6 +24,7 @@ th{font-size:11px;color:var(--sub);position:sticky;top:0;background:var(--card)}
 #bar{position:fixed;left:0;right:0;top:0;z-index:20;background:var(--card);padding:calc(env(safe-area-inset-top) + 8px) 14px 8px;box-shadow:0 2px 8px #0004;border-bottom:1px solid #8883}
 #bar .bv{font-size:22px;font-weight:700;line-height:1.2}#bar .bs{font-size:12px;color:var(--sub)}
 input.w{font-size:16px;padding:4px 3px;border-radius:6px;text-align:right;background:#ffd60a22}
+.tx{font-size:10px;color:#e0803a;text-align:right;min-height:0}
 .neg{color:#e53935!important;font-weight:700}
 th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}.pos{color:var(--pos)}
 .wrap{overflow-x:auto}
@@ -34,6 +35,7 @@ input[type=date]{text-align:left;min-height:46px}input[type=date]::-webkit-date-
 <label>Principal ($)</label><input id="p" type="text" inputmode="decimal" autocomplete="off" value="10,000">
 <label>Daily Profit Rate (%)</label><input id="r" type="number" inputmode="decimal" value="2">
 <label>Length of Term (trading days, weekends excluded)</label><input id="n" type="number" inputmode="numeric" value="20">
+<label style="display:flex;align-items:center;gap:8px;font-size:15px;color:var(--txt)"><input id="tx" type="checkbox" checked style="appearance:auto;-webkit-appearance:checkbox;width:22px;height:22px;display:inline-block;margin:0;font-size:16px">Auto tax withdrawals</label><label>Tax % (on quarterly trading profit)</label><input id="tp" type="number" inputmode="decimal" value="31">
 <label>Start Date</label><input id="d" type="date">
 <label>End Date (optional, overrides Length of Term) <a href="#" id="eclr" style="float:right;color:var(--pos);text-decoration:none">Clear</a></label><input id="e" type="date">
 </div>
@@ -61,6 +63,20 @@ function fmtP(){const el=$('p'),v=el.value,pos=el.selectionStart??v.length;
 ['input','keyup','change'].forEach(ev=>$('p').addEventListener(ev,()=>{fmtP();calc()}));fmtP();
 function tradingDays(a,b){const [y1,m1,d1]=a.split('-').map(Number),[y2,m2,d2]=b.split('-').map(Number);let t=new Date(y1,m1-1,d1),e=new Date(y2,m2-1,d2),c=0;while(t<=e){const w=t.getDay();if(w!==0&&w!==6)c++;t.setDate(t.getDate()+1)}return c}
 $('eclr').onclick=ev=>{ev.preventDefault();$('e').value='';calc()};
+const _hc={};function isHol(dt){const y=dt.getFullYear();if(!_hc[y]){const H=new Set(),f=d=>H.add(iso(d));
+ const obs=(m,d)=>{const t=new Date(y,m,d);if(t.getDay()==6)t.setDate(t.getDate()-1);else if(t.getDay()==0)t.setDate(t.getDate()+1);return t};
+ const nth=(m,wd,n)=>{const t=new Date(y,m,1);while(t.getDay()!=wd)t.setDate(t.getDate()+1);t.setDate(t.getDate()+7*(n-1));return t};
+ const last=(m,wd)=>{const t=new Date(y,m+1,0);while(t.getDay()!=wd)t.setDate(t.getDate()-1);return t};
+ const ny=new Date(y,0,1);if(ny.getDay()!=6)f(obs(0,1));
+ f(nth(0,1,3));f(nth(1,1,3));
+ const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,g=Math.floor((8*b+13)/25),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+19*l)/433),mo=Math.floor((h+l-7*m+90)/25),da=(h+l-7*m+33*mo+19)%32;
+ f(new Date(y,mo-1,da-2));f(last(4,1));f(obs(5,19));f(obs(6,4));f(nth(8,1,1));f(nth(10,4,4));f(obs(11,25));_hc[y]=H}
+ return _hc[y].has(iso(dt))}
+const TXP=[[0,'04-15',0],[0,'04-15',0],[0,'04-15',0],[1,'06-15',0],[1,'06-15',0],[2,'09-15',0],[2,'09-15',0],[2,'09-15',0],[3,'01-15',1],[3,'01-15',1],[3,'01-15',1],[3,'01-15',1]];
+function taxPost(y,md){const [mm,d]=md.split('-').map(Number),t=new Date(y,mm-1,d);while(t.getDay()==0||t.getDay()==6||isHol(t))t.setDate(t.getDate()+1);return iso(t)}
+function periodOf(dt){const q=TXP[dt.getMonth()],y=dt.getFullYear();return {id:y+'Q'+(q[0]+1),post:taxPost(y+q[2],q[1])}}
+const ts=localStorage.getItem('cc2_tx');if(ts!==null)$('tx').checked=ts==='1';const tps=localStorage.getItem('cc2_tp');if(tps!==null)$('tp').value=tps;
+['tx','tp'].forEach(i=>['input','change'].forEach(ev=>$(i).addEventListener(ev,()=>calc())));
 function calc(full){
  if(full===undefined)full=true;
  const sd=$('d').value||iso(today),ed=$('e').value;
@@ -69,18 +85,21 @@ function calc(full){
  ids.forEach(i=>localStorage.setItem('cc2_'+i,$(i).value));
  const P=+$('p').value.replace(/,/g,'')||0,r=(+$('r').value||0)/100,n=Math.min(Math.max(parseInt($('n').value)||0,0),3000);
  const [y,m,dd]=($('d').value||iso(today)).split('-').map(Number);
+ localStorage.setItem('cc2_tx',$('tx').checked?'1':'0');localStorage.setItem('cc2_tp',$('tp').value);$('tp').disabled=!$('tx').checked;$('tp').style.opacity=$('tx').checked?'':.5;
+ const TX=$('tx').checked,tr_=Math.max(0,+$('tp').value||0)/100,acc={},posts={};let tt=0;
  let dt=new Date(y,m-1,dd),b=P,rows='',tw=0,neg=false;const data=[];
  for(let k=1;k<=n;k++){
   while(dt.getDay()==0||dt.getDay()==6)dt.setDate(dt.getDate()+1);
   const key=iso(dt),w=+String(W[key]||'').replace(/[,$]/g,'')||0;
-  const beg=b,pr=beg*r;b=beg+pr-w;tw+=w;if(b<0)neg=true;
-  data.push({key,beg,pr,b});
-  if(full){const wv=W[key]||'';rows=`<tr data-k="${key}"><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td class="bg${beg<0?' neg':''}">${m0(beg)}</td><td class="pos pr">${m0(pr)}</td><td><input class="w" data-k="${key}" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="${String(wv).replace(/"/g,'')}"></td><td class="eb${b<0?' neg':''}">${m0(b)}</td></tr>`+rows}
+  const beg=b,pr=beg*r;let tax=0;if(TX){for(const id in posts){if(posts[id]===key){tax+=Math.max(0,acc[id])*tr_;delete posts[id]}}const pd=periodOf(dt);if(!(pd.id in acc)){acc[pd.id]=0;posts[pd.id]=pd.post}acc[pd.id]+=pr}
+  b=beg+pr-w-tax;tw+=w;tt+=tax;if(b<0)neg=true;
+  data.push({key,beg,pr,b,tax});
+  if(full){const wv=W[key]||'';rows=`<tr data-k="${key}"><td>${k}</td><td>${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</td><td class="bg${beg<0?' neg':''}">${m0(beg)}</td><td class="pos pr">${m0(pr)}</td><td><div class="tx">${tax?'tax '+m0(tax):''}</div><input class="w" data-k="${key}" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="${String(wv).replace(/"/g,'')}"></td><td class="eb${b<0?' neg':''}">${m0(b)}</td></tr>`+rows}
   dt.setDate(dt.getDate()+1);
  }
- $('end').textContent=money(b);$('end').classList.toggle('neg',b<0);$('bend').textContent=money(b);$('bend').classList.toggle('neg',b<0);$('bsum').textContent=`Withdrawals ${money(tw)} · Profit ${money(b-P+tw)}`;
- $('summary').innerHTML=`Total profit ${money(b-P+tw)} over ${n} trading days<br>Total withdrawals ${money(tw)}<br>(${(n/5).toFixed(1)} weeks, ${(n/21).toFixed(1)} months)`+(neg?'<br><span class="neg">Balance goes negative</span>':'');
- if(full){$('tbl').innerHTML=rows}else{data.forEach(o=>{const tr=$('tbl').querySelector(`tr[data-k="${o.key}"]`);if(!tr)return;const bg=tr.querySelector('.bg'),pr=tr.querySelector('.pr'),eb=tr.querySelector('.eb');bg.textContent=m0(o.beg);bg.classList.toggle('neg',o.beg<0);pr.textContent=m0(o.pr);eb.textContent=m0(o.b);eb.classList.toggle('neg',o.b<0)})}
+ $('end').textContent=money(b);$('end').classList.toggle('neg',b<0);$('bend').textContent=money(b);$('bend').classList.toggle('neg',b<0);$('bsum').textContent=`Withdrawals ${money(tw)} · Taxes ${money(tt)} · Profit ${money(b-P+tw+tt)}`;
+ $('summary').innerHTML=`Total profit ${money(b-P+tw+tt)} over ${n} trading days<br>Total withdrawals ${money(tw)}<br>Taxes paid ${money(tt)}<br>(${(n/5).toFixed(1)} weeks, ${(n/21).toFixed(1)} months)`+(neg?'<br><span class="neg">Balance goes negative</span>':'');
+ if(full){$('tbl').innerHTML=rows}else{data.forEach(o=>{const tr=$('tbl').querySelector(`tr[data-k="${o.key}"]`);if(!tr)return;const bg=tr.querySelector('.bg'),pr=tr.querySelector('.pr'),eb=tr.querySelector('.eb');tr.querySelector('.tx').textContent=o.tax?'tax '+m0(o.tax):'';bg.textContent=m0(o.beg);bg.classList.toggle('neg',o.beg<0);pr.textContent=m0(o.pr);eb.textContent=m0(o.b);eb.classList.toggle('neg',o.b<0)})}
 }
 $('tbl').addEventListener('input',ev=>{const t=ev.target;if(!t.classList.contains('w'))return;const v=t.value.trim();if(v)W[t.dataset.k]=v;else delete W[t.dataset.k];localStorage.setItem('cc2_w',JSON.stringify(W));calc(false)});
 function applyURL(){const q=new URLSearchParams(location.search);let any=false;ids.forEach(i=>{if(q.has(i)){$(i).value=q.get(i);any=true}});if(typeof man!=='undefined'&&q.has('x')){try{man=JSON.parse(q.get('x'))}catch(_){}any=true}if(any)history.replaceState(null,'',location.pathname);return any}
@@ -96,6 +115,6 @@ function posBar(){const v=window.visualViewport;$('bar').style.transform=v?`tran
 if(window.visualViewport){visualViewport.addEventListener('resize',posBar);visualViewport.addEventListener('scroll',posBar)}window.addEventListener('scroll',posBar);window.addEventListener('resize',padBar);padBar();posBar();
 $('reset').onclick=()=>{if(!confirm("Reset calculator? This clears all withdrawals and resets inputs to defaults."))return;
  Object.keys(localStorage).filter(k=>k==='cc2_w'||k.startsWith('cc2_wd')).forEach(k=>localStorage.removeItem(k));W={};
- ids.forEach(i=>{localStorage.removeItem('cc2_'+i);$(i).value=$(i).defaultValue});$('d').value=iso(new Date());$('e').value='';fmtP();calc();padBar()};
+ ids.forEach(i=>{localStorage.removeItem('cc2_'+i);$(i).value=$(i).defaultValue});$('d').value=iso(new Date());$('e').value='';localStorage.removeItem('cc2_tx');localStorage.removeItem('cc2_tp');$('tx').checked=true;$('tp').value='31';fmtP();calc();padBar()};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v12</div></body></html>
+</script><div style="text-align:center;opacity:.4;font-size:11px;margin:12px">v13</div></body></html>
